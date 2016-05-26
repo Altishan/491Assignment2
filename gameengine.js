@@ -109,6 +109,13 @@ GameEngine.prototype.draw = function () {
     for (var i = 0; i < this.entities.length; i++) {
         this.entities[i].draw(this.ctx);
     }
+    this.ctx.fontStyle = "30px Impact";
+    this.ctx.strokeStyle = "Black";
+    this.ctx.fillStyle = "White";
+    this.ctx.lineWidth = 3;
+    var timerText = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 });
+    this.ctx.strokeText(timerText.format(this.timer.gameTime), 20, 20);
+    this.ctx.fillText(timerText.format(this.timer.gameTime), 20, 20);
     this.ctx.restore();
 }
 
