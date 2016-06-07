@@ -36,6 +36,9 @@ function GameEngine() {
     this.mouse = null;
     this.wheel = null;
     this.towerCount = 0;
+    this.spawnRate;
+    this.spawnCounter;
+    this.incrementCounter;
     this.surfaceWidth = null;
     this.surfaceHeight = null;
 }
@@ -65,14 +68,38 @@ GameEngine.prototype.startInput = function () {
     console.log('Starting input');
     var that = this;
 
-    var getXandY = function (e) {
+    /*var getXandY = function (e) {
         var x = e.clientX - that.ctx.canvas.getBoundingClientRect().left;
         var y = e.clientY - that.ctx.canvas.getBoundingClientRect().top;
 
         return { x: x, y: y };
-    }
+    }*/
+    window.addEventListener("keydown", function (e) {
+        console.log("linked");
+        if (String.fromCharCode(e.which) === 'S') {
+            saveToServer(that);
+            e.preventDefault();
+            //console.log("s");
+        }
+        if (String.fromCharCode(e.which) === 'L') {
+            loadFromServer(that);
+            e.preventDefault();
+            //console.log("l");
+        }
 
-    this.ctx.canvas.addEventListener("mousemove", function (e) {
+    }, true);
+
+    this.ctx.canvas.addEventListener("keyup", function (e) {
+        if (String.fromCharCode(e.which) === 'S') {
+            console.log("s up");
+        }
+        if (String.fromCharCode(e.which) === 'L') {
+            console.log("l up");
+        }
+
+    }, false);
+
+/*    this.ctx.canvas.addEventListener("mousemove", function (e) {
         //console.log(getXandY(e));
         that.mouse = getXandY(e);
     }, false);
@@ -88,18 +115,16 @@ GameEngine.prototype.startInput = function () {
         //       console.log(e.wheelDelta);
         e.preventDefault();
     }, false);
-
+    */
     this.ctx.canvas.addEventListener("contextmenu", function (e) {
-        //console.log(getXandY(e));
-        that.rightclick = getXandY(e);
         e.preventDefault();
     }, false);
-
+    
     console.log('Input started');
 }
 
 GameEngine.prototype.addEntity = function (entity) {
-    console.log('added entity');
+    //console.log('added entity');
     this.entities.push(entity);
 }
 
@@ -128,7 +153,7 @@ GameEngine.prototype.update = function () {
         this.incrementCounter = 0;
     }
     
-    console.log(this.timer.gameTime);
+    //console.log(this.timer.gameTime);
     
     
     for (var i = 0; i < entitiesCount; i++) {
@@ -158,6 +183,8 @@ GameEngine.prototype.loop = function () {
     this.rightclick = null;
     this.wheel = null;
 }
+
+
 
 function Entity(game, x, y, type) {
     this.game = game;
@@ -196,3 +223,5 @@ Entity.prototype.rotateAndCache = function (image, angle) {
     //offscreenCtx.strokeRect(0,0,size,size);
     return offscreenCanvas;
 }
+
+

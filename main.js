@@ -1,3 +1,35 @@
+//Assignment 3 stuff
+var socket = io.connect("http://76.28.150.193:8888");
+var onGenDataList = [];
+var onLoadDataList = [];
+var game;
+
+socket.on("connect", function () {
+    console.log("connected to the server");
+})
+
+socket.on("load", function (data) {
+    onLoadDataList = [];
+    onLoadDataList = data.data;
+    //console.log(data.data);
+    game.entities = [];
+    loadListData(game, onLoadDataList);
+    console.log("loaded");
+});
+
+var saveToServer = function (game) {
+    onGenDataList = generateDataList(game);
+    //console.log(onGenDataList);
+    socket.emit("save", { studentname: "Andy Bleich", statename: "A3State", data: onGenDataList });
+    console.log("saved");
+
+}
+
+var loadFromServer = function (game) {
+    socket.emit("load", { studentname: "Andy Bleich", statename: "A3State" });
+    //console.log(onLoadDataList);
+}
+
 
 // GameBoard code below
 
@@ -19,6 +51,7 @@ function Tower(game, x, y) {
     this.color = "grey";
     this.difX = 0;
     this.difY = 0;
+    this.isSuper = false;
     this.shootable = false;
     this.target = null;
     this.velocity = { x: 0, y: 0 };
@@ -57,7 +90,7 @@ Tower.prototype.update = function () {
         dist = distance(this, this.target);
         this.difX = (this.target.x - this.x) / dist;
         this.difY = (this.target.y - this.y) / dist;
-        var shot = new Shot(this.game, this.x, this.y, this.difX, this.difY, "arrow");
+        var shot = new Shot(this.game, this.x, this.y, this.difX, this.difY, "shot");
         this.game.addEntity(shot);
         this.canShoot = false;
     }
@@ -80,6 +113,7 @@ Tower.prototype.collide = function (other) {
 Tower.prototype.designateSuper = function () {
     this.shootCooldown = .25;
     this.color = "blue";
+    this.isSuper = true;
 }
 
 Tower.prototype.aim = function (ent) {
@@ -115,17 +149,12 @@ function Shot(game, x, y, dx, dy, type) {
     this.shootable = false;
     this.dx = dx * 1000;
     this.dy = dy * 1000;
-    if (type = "arrow") {
-        this.type = "arrow";
+    if (type = "shot") {
+        this.type = "shot";
         this.dmg = 1;
         this.radius = 5;
         this.velocity = { x: this.dx, y: this.dy };
-    } else if (type = "cannon") {
-        this.type = "cannon";
-        this.dmg = 0;
-        this.radius = 20;
-        this.velocity = { x: this.dx, y: this.dy };
-    }
+    } 
     var speed = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y + this.velocity.y);
     if (speed > maxSpeed) {
         var ratio = maxSpeed / speed;
@@ -164,13 +193,10 @@ Shot.prototype.update = function () {
 Shot.prototype.draw = function (ctx) {
     ctx.beginPath();
     ctx.fillStyle = "White";
-    if (this.type = "arrow") {
+    if (this.type = "shot") {
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
         ctx.fill();
-    } else if (this.type = "cannon") {
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-        ctx.fill();
-    }
+    } //Remnants of old code. Weird formatting
     ctx.closePath();
 
 }
@@ -333,6 +359,77 @@ Circle.prototype.draw = function (ctx) {
 };
 
 
+var generateDataList = function (game) {
+    list = [];
+    var towerList = [];
+    var shotList = [];
+    var circleList = [];
+    for (var i = 0; i < game.entities.length; i++) {
+        var ent = game.entities[i];
+        if (ent.type === "tower") {
+            var towerData = {
+                x: ent.x, y: ent.y,
+                type: "tower", isSuper: ent.isSuper
+            };
+            towerList.push(towerData);
+        } else if (ent.type === "shot") {
+            var shotData = {
+                x: ent.x, y: ent.y,
+                dx: ent.dx, dy: ent.dy,
+                type: "shot" 
+            };
+            shotList.push(shotData);
+        } else if (ent.type === "circle") {
+            var circleData = {
+                x: ent.x, y: ent.y,
+                velocity: ent.velocity, type: "circle"
+            };
+            circleList.push(circleData);
+        }
+    }
+    var spawnRates = { spawnRate: game.spawnRate, spawnCounter: game.spawnCounter, increment: game.incrementCounter, towerCount: game.towerCount };
+    list.push(towerList);
+    list.push(shotList);
+    list.push(circleList);
+    list.push(spawnRates);
+    return list;
+}
+
+var loadListData = function (game, list) {
+    var towers = list[0];
+    var shots = list[1];
+    var circles = list[2];
+    var spawnRates = list[3];
+    game.spawnRate = spawnRates.spawnRate;
+    game.spawnCounter = spawnRates.spawnCounter;
+    game.incrementCounter = spawnRates.increment;
+    game.towerCount = spawnRates.towerCount;
+    //console.log(game.spawnCounter);
+
+    for (var i = 0; i < towers.length; i++) {
+        var ent = towers[i];
+        var newTower = new Tower(game, ent.x, ent.y);
+        if (ent.isSuper === true) {
+            newTower.designateSuper();
+        }
+        game.addEntity(newTower);
+    }
+
+    for (var i = 0; i < shots.length; i++) {
+        var ent = shots[i];
+        var newShot = new Shot(game, ent.x, ent.y, ent.dx, ent.dy, "shot");
+        game.addEntity(newShot);
+    } 
+    for (var i = 0; i < circles.length; i++) {
+        var ent = circles[i];
+        var newCircle = new Circle(game);
+        newCircle.x = ent.x;
+        newCircle.y = ent.y;
+        game.addEntity(newCircle);
+    }
+
+}
+
 
 // the "main" code begins here
 var friction = 1;
@@ -383,6 +480,7 @@ ASSET_MANAGER.downloadAll(function () {
     
     gameEngine.init(ctx);
     gameEngine.start();
+    game = gameEngine;
 });
 
 var restartGame = function (game) {
