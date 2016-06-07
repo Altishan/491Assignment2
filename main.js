@@ -387,7 +387,10 @@ var generateDataList = function (game) {
             circleList.push(circleData);
         }
     }
-    var spawnRates = { spawnRate: game.spawnRate, spawnCounter: game.spawnCounter, increment: game.incrementCounter, towerCount: game.towerCount };
+    var spawnRates = {
+        spawnRate: game.spawnRate, spawnCounter: game.spawnCounter, increment: game.incrementCounter, towerCount: game.towerCount,
+        gameTime: game.timer.gameTime
+    };
     list.push(towerList);
     list.push(shotList);
     list.push(circleList);
@@ -404,6 +407,7 @@ var loadListData = function (game, list) {
     game.spawnCounter = spawnRates.spawnCounter;
     game.incrementCounter = spawnRates.increment;
     game.towerCount = spawnRates.towerCount;
+    game.timer.gameTime = spawnRates.gameTime;
     //console.log(game.spawnCounter);
 
     for (var i = 0; i < towers.length; i++) {
